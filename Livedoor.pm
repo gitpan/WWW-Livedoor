@@ -331,7 +331,7 @@ sub allowed {
 
 =head1 NAME
 
-WWW::Livedoor - Perl extension for scraping the livedoor social networking service.
+WWW::Livedoor - LWP::UserAgent module for Livedoor.com
 
 =head1 SYNOPSIS
 
