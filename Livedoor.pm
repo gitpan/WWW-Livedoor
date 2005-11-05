@@ -74,15 +74,6 @@ sub is_login_required {
 	return 0;
 }
 
-sub session {
-	my $self = shift;
-	return undef unless ($self->cookie_jar);
-	
-	printf "[%s]\n",$self->cookie_jar->as_string;
-	
-	return ($self->cookie_jar->as_string =~ /\bSet-Cookie.*?:.*? BF_SESSION=(.*?);/) ? $1 : undef;
-}
-
 sub refresh { return $_[0]->{'livedoor'}->{'refresh'}; }
 
 sub request {
