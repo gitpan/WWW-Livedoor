@@ -320,15 +320,15 @@ WWW::Livedoor - LWP::UserAgent module for Livedoor.com
   use WWW::Livedoor;
   use strict;
 
-## Login livedoor.com using livedoor_id & password
+ ## Login livedoor.com using livedoor_id & password
   my $livedoor= WWW::Livedoor->new('[livedoor_id]', '[password]');
      $livedoor->login;
 
-## Getting Any Logined Page
+ ## Getting Any Logined Page
   my $res = $livedoor->get('http://frepa.livedoor.com');
      $res->content; ## result
 
-## POST Any Query And Get the Result
+ ## POST Any Query And Get the Result
   my @form = ('k' => 'search',
               'q' => 'test');
 
@@ -354,4 +354,3 @@ WWW::Livedoor is written by http://satoru.net <sayano@cpan.org>
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
-
