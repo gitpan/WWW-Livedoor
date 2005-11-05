@@ -4,7 +4,7 @@ use strict;
 use Carp ();
 use vars qw($VERSION @ISA);
 
-$VERSION = sprintf("%d.%02d", q$Revision: 0.33$ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 0.01$ =~ /(\d+)\.(\d+)/);
 
 require LWP::RobotUA;
 @ISA = qw(LWP::RobotUA);
@@ -19,11 +19,11 @@ sub new {
 	my ($class, $livedoor_id, $password, %opt) = @_;
 	my $base = 'http://livedoor.com';
 
-	# オプションの処理
+	# Option
 	Carp::croak('WWW::Livedoor id required') unless $livedoor_id;
 	Carp::croak('WWW::Livedoor password required') unless $password;
 
-	# オブジェクトの生成
+	# Make Object
 	my $name = "WWW::Livedoor/" . $VERSION;
 	my $rules = WWW::Livedoor::RobotRules->new($name);
 	my $self = LWP::RobotUA->new($livedoor_id, 'WWW-Livedoor@mail.com', $rules);
@@ -31,7 +31,7 @@ sub new {
 	$self->from($livedoor_id);
 	$self->delay(1/60);
 
-	# 独自変数の設定
+	# Setting
 	$self->{'livedoor'} = {
 		'base'       => $base,
 		'id'         => $livedoor_id,
@@ -55,23 +55,17 @@ sub login {
 		'next_url' => $self->absolute_url($next),
 	);
 	$self->enable_cookies;
-	# ログイン
-	$self->log("[info] 再ログインします。\n") if ($self->session);
+	# Login
 	my $res = $self->post($page, %form);
 	$self->{'livedoor'}->{'refresh'} = ($res->is_success and $res->headers->header('refresh') =~ /url=([^ ;]+)/) ? $self->absolute_url($1) : undef;
 	return $res;
 }
 
-sub is_logined {
-	my $self = shift;
-	return ($self->session and $self->stamp) ? 1 : 0;
-}
-
 sub is_login_required {
 	my $self = shift;
 	my $res  = (@_) ? shift : $self->{'livedoor'}->{'response'};
-	if    (not $res)             { return "ページを取得できていません。"; }
-	elsif (not $res->is_success) { return sprintf('ページ取得に失敗しました。（%s）', $res->message); }
+	if    (not $res)             { return "cannot get the page"; }
+	elsif (not $res->is_success) { return sprintf('Connected is sucessed but faild get page（%s）', $res->message); }
 	else {
 		my $content = $res->content;
 
@@ -83,13 +77,10 @@ sub is_login_required {
 sub session {
 	my $self = shift;
 	return undef unless ($self->cookie_jar);
+	
+	printf "[%s]\n",$self->cookie_jar->as_string;
+	
 	return ($self->cookie_jar->as_string =~ /\bSet-Cookie.*?:.*? BF_SESSION=(.*?);/) ? $1 : undef;
-}
-
-sub stamp {
-	my $self = shift;
-	return undef unless ($self->cookie_jar);
-	return ($self->cookie_jar->as_string =~ /\bSet-Cookie.*?:.*? BF_STAMP=(.*?);/) ? $1 : undef;
 }
 
 sub refresh { return $_[0]->{'livedoor'}->{'refresh'}; }
@@ -119,10 +110,10 @@ sub get {
 	my $self = shift;
 	my $url  = shift;
 	$url     = $self->absolute_url($url);
-	$self->log("[info] GETメソッドで\"${url}\"を取得します。\n");
-	# 取得
+	$self->log("[info] GET method => '${url}'\n");
+	# get
 	my $res  = $self->request(HTTP::Request->new('GET', $url));
-	$self->log("[info] リクエストが処理されました。\n");
+	$self->log("[info] Request done.\n");
 	return $res;
 }
 
@@ -130,16 +121,15 @@ sub post {
 	my $self = shift;
 	my $url  = shift;
 	$url     = $self->absolute_url($url);
-	$self->log("[info] POSTメソッドで\"${url}\"を取得します。\n");
-	# リクエストの生成
+	$self->log("[info] Post Method '${url}'\n");
+
 	my @form = @_;
 	my $req  = (grep {ref($_) eq 'ARRAY'} @form) ?
 	           &HTTP::Request::Common::POST($url, Content_Type => 'form-data', Content => [@form]) : 
 	           &HTTP::Request::Common::POST($url, [@form]);
-	$self->log("[info] リクエストが生成されました。\n");
-	# 取得
+	# Do Request
 	my $res = $self->request($req);
-	$self->log("[info] リクエストが処理されました。\n");
+	$self->log("[info] Request Done.\n");
 	return $res;
 }
 
@@ -185,7 +175,7 @@ sub enable_cookies {
 	unless ($self->cookie_jar) {
 		my $cookie = sprintf('cookie_%s_%s.txt', $$, time);
 		$self->cookie_jar(HTTP::Cookies->new(file => $cookie, ignore_discard => 1));
-		$self->log("[info] Cookieを有効にしました。\n");
+		$self->log("[info] Setted Cookie\n");
 	}
 	return $self;
 }
@@ -196,11 +186,11 @@ sub save_cookies {
 	my $info = '';
 	my $result = 0;
 	if (not $self->cookie_jar) {
-		$info = "[error] Cookieが無効です。\n";
+		$info = "[error] cannot use Cookie\n";
 	} elsif (not $file) {
-		$info = "[error] Cookieを保存するファイル名が指定されませんでした。\n";
+		$info = "[error] Nothing cookie file name\n";
 	} else {
-		$info = "[info] Cookieを\"${file}\"に保存します。\n";
+		$info = "[info] Save to Cookie '${file}'\n";
 		$result = eval "\$self->cookie_jar->save(\$file)";
 		$info .= "[error] $@\n" if ($@);
 	}
@@ -213,11 +203,11 @@ sub load_cookies {
 	my $info = '';
 	my $result = 0;
 	if (not $file){ 
-		$info = "[error] Cookieを読み込むファイル名が指定されませんでした。\n";
+		$info = "[error] Cookie filename Nothing..\n";
 	} elsif (not $file) {
-		$info = "[error] Cookieファイル\"${file}\"が存在しません。\n";
+		$info = "[error] Cookie-File is nothing '${file}'\n";
 	} else {
-		$info = "[info] Cookieを\"${file}\"から読み込みます。\n";
+		$info = "[info] Load Cookie data from '${file}'\n";
 		$self->enable_cookies;
 		$result = eval "\$self->cookie_jar->load(\$file)";
 		$info .= "[error] $@\n" if ($@);
@@ -335,18 +325,30 @@ WWW::Livedoor - LWP::UserAgent module for Livedoor.com
 
 =head1 SYNOPSIS
 
-  require WWW::Livedoor;
-  $livedoor = WWW::Livedoor->new('[livedoor_id]', '[password]');
-  $livedoor->login;
-  my $res = $livedoor->get('http://frepa.livedoor.com'); ## Livedoor Login URL
-  print $res->content;
+  use HTTP::Request::Common;
+  use WWW::Livedoor;
+  use strict;
+
+## Login livedoor.com using livedoor_id & password
+  my $livedoor= WWW::Livedoor->new('[livedoor_id]', '[password]');
+     $livedoor->login;
+
+## Getting Any Logined Page
+  my $res = $livedoor->get('http://frepa.livedoor.com');
+     $res->content; ## result
+
+## POST Any Query And Get the Result
+  my @form = ('k' => 'search',
+              'q' => 'test');
+
+  my $req = &HTTP::Request::Common::POST("http://search.livedoor.com/search/",[@form]);
+  my $res = $livedoor->request($req);
+     $res->content; ## result
 
 =head1 DESCRIPTION
 
 WWW::Livedoor uses LWP::RobotUA to scrape livedoor.com
 This provide login method, get and put method, and some parsing method for user who create livedoor spider.
-
-See "livedoor.pod" for more detail.
 
 =head1 SEE ALSO
 
@@ -354,11 +356,10 @@ L<LWP::UserAgent>, L<WWW::RobotUA>, L<HTTP::Request::Common>
 
 =head1 AUTHORS
 
-WWW::Livedoor is written by satoru.net <asadedewdew@hotmail.com>
+WWW::Livedoor is written by http://satoru.net <sayano@cpan.org>
+
 
 =head1 COPYRIGHT
-
-Copyright 2005 Satoru yano.
 
 This library is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
