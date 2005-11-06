@@ -4,7 +4,7 @@ use strict;
 use Carp ();
 use vars qw($VERSION @ISA);
 
-$VERSION = sprintf("%d.%02d", q$Revision: 0.01$ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d.%02d", q$Revision: 0.11$ =~ /(\d+)\.(\d+)/);
 
 require LWP::RobotUA;
 @ISA = qw(LWP::RobotUA);
@@ -349,6 +349,11 @@ L<LWP::UserAgent>, L<WWW::RobotUA>, L<HTTP::Request::Common>
 
 WWW::Livedoor is written by http://satoru.net <sayano@cpan.org>
 
+=head1 ACKNOWLEDGMENTS
+
+I'd like to thank the following for finding bugs and offering suggestions:
+
+ WWW::Mixi TSUKAMOTO Makio (tsukamoto@gmail.com)
 
 =head1 COPYRIGHT
 
